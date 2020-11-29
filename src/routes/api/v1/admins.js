@@ -2,7 +2,7 @@ const { Router } = require("express");
 const router = Router();
 
 // @Endpoint:     GET   /api/v1/admins/
-// @Description   Get a List of admins
+// @Description   Get a list of admins
 // @Access        Private (superAdmin only)
 router.get("/", async (req, res) => {
   res.send("Admins");
@@ -16,7 +16,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // @Endpoint:     POST   /api/v1/admins/
-// @Description   Create a nw admin
+// @Description   Create a new admin
 // @Access        Private (superAdmin only)
 router.post("/", async (req, res) => {
   res.send("Admins");
