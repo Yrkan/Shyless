@@ -2,7 +2,7 @@
   "name": "shyless",
   "version": "0.0.1",
   "description": "Backend for shyless built with node and express",
-  "main": "server.js",
+  "main": "src/server.js",
   "repository": "https://github.com/Yrkan/Shyless.git",
   "author": "Thami Memel <memelthami@gmail.com>",
   "license": "MIT",
