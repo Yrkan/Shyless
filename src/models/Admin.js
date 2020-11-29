@@ -17,20 +17,20 @@ const AdminSchema = new mongoose.Schema({
   },
   permissions: {
     // Highest role can manage other admins (preferably keep only 1 superAdmin)
-    superAdmin: {
+    super_admin: {
       type: Boolean,
       default: false,
     },
-    manageUsers: {
+    manage_users: {
       type: Boolean,
       default: false,
     },
-    managePosts: {
+    manage_posts: {
       type: Boolean,
       default: false,
     },
   },
-  createDate: {
+  create_date: {
     type: Date,
     default: Date.now,
   },
