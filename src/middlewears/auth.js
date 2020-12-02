@@ -15,13 +15,13 @@ const authAdmin = async (req, res, next) => {
     }
 
     // Decode JWT from token
-    const decoded = jwt.decode(token, config.get("jwtKey"));
-    // Verrify the id is correct
-    if (decoded && decoded.admin && decoded.admin.id) {
+    try {
+      const decoded = jwt.decode(token, config.get("jwtKey"));
+      // Verrify the id is correct
       req.admin = decoded.admin;
       next();
-    } else {
-      return res.json(401).json(UNAUTHORIZED_ACCESS);
+    } catch (e) {
+      return res.status(400).json(INVALID_TOKEN);
     }
   } catch (err) {
     console.error(err.message);
