@@ -1,11 +1,15 @@
 const { Router } = require("express");
+
 const router = Router();
+const Admin = require("../../../models/Admin");
+const { authAdmin } = require("../../../middlewears/auth");
 
 // @Endpoint:     GET   /api/v1/admins/
 // @Description   Get a list of admins
 // @Access        Private (superAdmin only)
-router.get("/", async (req, res) => {
-  res.send("Admins");
+router.get("/", authAdmin, async (req, res) => {
+  const adminsList = await Admin.find({});
+  res.json(adminsList);
 });
 
 // @Endpoint:     GET   /api/v1/admins/:id
