@@ -29,9 +29,36 @@ const INVALID_CREDENTIALS = {
     },
   ],
 };
+
+const INVALID_ID = {
+  errors: [
+    {
+      msg: "Invalid ID",
+    },
+  ],
+};
+
+const USERNAME_ALREADY_IN_USE = {
+  errors: [
+    {
+      msg: "Username is already in use",
+    },
+  ],
+};
+
+const EMAIL_ALREADY_IN_USE = {
+  errors: [
+    {
+      msg: "Email is already in use",
+    },
+  ],
+};
 module.exports = {
   INTERNAL_SERVER_ERROR,
   INVALID_TOKEN,
+  INVALID_ID,
   UNAUTHORIZED_ACCESS,
   INVALID_CREDENTIALS,
+  USERNAME_ALREADY_IN_USE,
+  EMAIL_ALREADY_IN_USE,
 };

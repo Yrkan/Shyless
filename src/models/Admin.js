@@ -30,6 +30,10 @@ const AdminSchema = new mongoose.Schema({
       default: false,
     },
   },
+  update_date: {
+    type: Date,
+    default: Date.now,
+  },
   create_date: {
     type: Date,
     default: Date.now,

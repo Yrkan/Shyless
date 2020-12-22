@@ -1,10 +1,6 @@
 const jwt = require("jsonwebtoken");
 const config = require("config");
-const {
-  INTERNAL_SERVER_ERROR,
-  INVALID_TOKEN,
-  UNAUTHORIZED_ACCESS,
-} = require("../consts/errors");
+const { INTERNAL_SERVER_ERROR, INVALID_TOKEN } = require("../consts/errors");
 
 const authAdmin = async (req, res, next) => {
   try {
