@@ -52,6 +52,7 @@ router.get("/:id", authAdmin, async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(req.admin.id)) {
       return res.status(400).json(INVALID_TOKEN);
     }
+
     // check if the logged admin is a superadmin or the ownerAdmin
     const loggedAdmin = await Admin.findById(req.admin.id);
     if (!loggedAdmin) {
@@ -153,9 +154,103 @@ router.post(
 // @Endpoint:     PUT   /api/v1/admins/:id
 // @Description   Update an admin information
 // @Access        Private (superAdmin + Owner admin)
-router.put("/:id", async (req, res) => {
-  res.send("Admins");
-});
+router.put(
+  "/:id",
+  [
+    authAdmin,
+    [
+      //TODO: better validation
+      check("username", "username is required").notEmpty().optional(),
+      check("password", "password is required").notEmpty().optional(),
+      check("email", "email is required").notEmpty().optional(),
+      check("email", "invalid email address").isEmail().optional(),
+    ],
+  ],
+  async (req, res) => {
+    try {
+      // check for errors in request
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      // validate the id
+      if (!mongoose.Types.ObjectId.isValid(req.admin.id)) {
+        return res.status(400).json(INVALID_TOKEN);
+      }
+
+      // check if the logged admin is a superadmin or the ownerAdmin
+      const loggedAdmin = await Admin.findById(req.admin.id);
+      if (!loggedAdmin) {
+        return res.status(400).json(INVALID_TOKEN);
+      }
+      if (
+        !(
+          loggedAdmin.permissions.super_admin ||
+          loggedAdmin.id === req.params.id
+        )
+      ) {
+        return res.status(401).json(UNAUTHORIZED_ACCESS);
+      }
+
+      // update the admin
+      const { username, password, email, permissions } = req.body;
+      const updates = {};
+      if (username) {
+        // make sure  username doesn't  exist already
+        if (await Admin.findOne({ username })) {
+          return res.status(400).json(USERNAME_ALREADY_IN_USE);
+        }
+        updates.username = username;
+      }
+
+      if (email) {
+        // make sure  email doesn't  exist already
+        if (await Admin.findOne({ email })) {
+          return res.status(400).json(EMAIL_ALREADY_IN_USE);
+        }
+        updates.email = email;
+      }
+
+      if (password) {
+        const hashedPassword = await cryptPassword(password);
+        updates.password = hashedPassword;
+      }
+
+      // add permissions if any
+      if (permissions) {
+        // Only super admins can update permissions
+        if (!loggedAdmin.permissions.super_admin) {
+          return res.status(401).json(UNAUTHORIZED_ACCESS);
+        }
+        const newPermissions = {};
+        // CAREFUL: Having multiple super_admin can lead to problems keep only one
+        if (permissions.super_admin) {
+          newPermissions.super_admin = permissions.super_admin;
+        }
+        if (permissions.manage_users) {
+          newPermissions.manage_users = permissions.manage_users;
+        }
+        if (permissions.manage_posts) {
+          newPermissions.manage_posts = permissions.manage_posts;
+        }
+        updates.permissions = newPermissions;
+      }
+
+      // Update the admin info and return the new info
+      const newAdminInfo = await Admin.findByIdAndUpdate(
+        req.params.id,
+        updates,
+        { new: true }
+      );
+
+      return res.json(newAdminInfo);
+    } catch (err) {
+      console.error(err.message);
+      return res.status(500).json(INTERNAL_SERVER_ERROR);
+    }
+  }
+);
 
 // @Endpoint:     DELETE   /api/v1/admins/:id
 // @Description   Delete an admin
