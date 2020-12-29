@@ -255,7 +255,32 @@ router.put(
 // @Endpoint:     DELETE   /api/v1/admins/:id
 // @Description   Delete an admin
 // @Access        Private (superAdmin + Owner admin)
-router.put("/:id", async (req, res) => {
-  res.send("Admins");
+router.delete("/:id", authAdmin, async (req, res) => {
+  try {
+    // validate the id
+    if (!mongoose.Types.ObjectId.isValid(req.admin.id)) {
+      return res.status(400).json(INVALID_TOKEN);
+    }
+
+    // check if the logged admin is a superadmin or the ownerAdmin
+    const loggedAdmin = await Admin.findById(req.admin.id);
+    if (!loggedAdmin) {
+      return res.status(400).json(INVALID_TOKEN);
+    }
+    if (
+      !(loggedAdmin.permissions.super_admin || loggedAdmin.id === req.params.id)
+    ) {
+      return res.status(401).json(UNAUTHORIZED_ACCESS);
+    }
+
+    // Delete the admin
+    const deletedAdmin = await Admin.findByIdAndDelete(req.params.id);
+    return res.json(deletedAdmin);
+
+    return res.json(newAdminInfo);
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).json(INTERNAL_SERVER_ERROR);
+  }
 });
 module.exports = router;
