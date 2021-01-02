@@ -13,7 +13,7 @@ const {
 } = require("../../../consts/errors");
 const { authAdmin } = require("../../../middlewears/auth");
 const Admin = require("../../../models/Admin");
-
+const User = require("../../../models/User");
 const router = Router();
 
 // @Endpoint:     GET   /api/v1/auth/admin
@@ -92,7 +92,48 @@ router.post(
 // @Endpoint:     POST   /api/v1/auth/user/login
 // @Description   Login user
 // @Access        Public
-router.post("/user/login", async (req, res) => {
-  res.send("Auth");
-});
+router.post(
+  "/user/login",
+  [
+    // TODO: Better validation
+    check("username", "username is required").notEmpty(),
+    check("password", "password is required").notEmpty(),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const { username, password } = req.body;
+      const user = await User.findOne({ username }).select("+password");
+      // CHeck if username exists
+      if (!user) {
+        return res.status(400).json(INVALID_CREDENTIALS);
+      }
+
+      //check if password is correct
+      if (!(await bcrypt.compare(password, user.password))) {
+        return res.status(400).json(INVALID_CREDENTIALS);
+      }
+
+      // logged in generate token
+      jwt.sign(
+        { user: { id: user.id } },
+        config.get("jwtKey"),
+        {
+          expiresIn: 36000,
+        },
+        (err, token) => {
+          if (err) throw err;
+          return res.json(token);
+        }
+      );
+    } catch (err) {
+      console.error(err.message);
+      return res.status(500).json(INTERNAL_SERVER_ERROR);
+    }
+  }
+);
 module.exports = router;
