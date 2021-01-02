@@ -5,6 +5,7 @@ const {
   USERNAME_ALREADY_IN_USE,
   EMAIL_ALREADY_IN_USE,
 } = require("../../../consts/errors");
+const { USER_REGISTRED_SUCCESSFULLY } = require("../../../consts/messages");
 const router = Router();
 
 const User = require("../../../models/User");
@@ -78,7 +79,8 @@ router.post(
       user.email_confirmation_token = generateEmailVerificationToken(user.id);
       // save user
       await user.save();
-      return res.json(user);
+
+      return res.json(USER_REGISTRED_SUCCESSFULLY);
     } catch (err) {
       console.error(err);
       return res.status(500).json(INTERNAL_SERVER_ERROR);
