@@ -25,6 +25,7 @@ const UserSchema = new mongoose.Schema({
   },
   email_confirmation_token: {
     type: String,
+    select: false,
   },
   ban_status: {
     is_banned: {
