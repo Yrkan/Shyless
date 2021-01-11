@@ -1,11 +1,18 @@
 const { Router } = require("express");
 const { check, validationResult } = require("express-validator");
+const mongoose = require("mongoose");
 const {
   INTERNAL_SERVER_ERROR,
   USERNAME_ALREADY_IN_USE,
   EMAIL_ALREADY_IN_USE,
+  EMAIL_ALREADY_CONFIRMED,
+  INVALID_ID,
+  INVALID_TOKEN,
 } = require("../../../consts/errors");
-const { USER_REGISTRED_SUCCESSFULLY } = require("../../../consts/messages");
+const {
+  USER_REGISTRED_SUCCESSFULLY,
+  EMAIL_CONFIRMED_SUCCESSFULLY,
+} = require("../../../consts/messages");
 const router = Router();
 
 const User = require("../../../models/User");
@@ -81,6 +88,58 @@ router.post(
       await user.save();
 
       return res.json(USER_REGISTRED_SUCCESSFULLY);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json(INTERNAL_SERVER_ERROR);
+    }
+  }
+);
+
+// @Endpoint:     POST   /api/v1/users/register
+// @Description   Validate a user
+// @Access        Public
+router.post(
+  "/verify/:id",
+  [check("token", "token is required").notEmpty()],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json(errors.array());
+      }
+
+      // validate the user id
+      if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json(INVALID_ID);
+      }
+
+      const { token } = req.body;
+
+      const user = await User.findById(req.params.id).select(
+        "+email_confirmation_token"
+      );
+
+      // user id doesn't exist
+      if (!user) {
+        return res.status(400).json(INVALID_ID);
+      }
+
+      // user email already verified
+      if (user.is_email_confirmed) {
+        return res.status(400).json(EMAIL_ALREADY_CONFIRMED);
+      }
+
+      // user exists but bad token
+      if (user.email_confirmation_token != token) {
+        return res.status(401).json(INVALID_TOKEN);
+      }
+
+      // user exists and good token => verify user
+      user.is_email_confirmed = true; // set confirmed
+      user.email_confirmation_token = ""; // clear email confirmation
+
+      await user.save();
+      return res.json(EMAIL_CONFIRMED_SUCCESSFULLY);
     } catch (err) {
       console.error(err);
       return res.status(500).json(INTERNAL_SERVER_ERROR);
