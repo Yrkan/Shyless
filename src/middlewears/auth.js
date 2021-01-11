@@ -40,9 +40,13 @@ const authUser = async (req, res, next) => {
 
     // Decode JWT from token
     try {
-      const decoded = jwt.decode(token, config.get("jwtKey"));
+      const { user } = jwt.decode(token, config.get("jwtKey"));
       // Verrify the id is correct
-      req.user = decoded.user;
+      if (!user || !mongoose.Types.ObjectId.isValid(user.id)) {
+        return res.status(400).json(INVALID_TOKEN);
+      }
+
+      req.user = user;
       next();
     } catch (e) {
       return res.status(400).json(INVALID_TOKEN);
