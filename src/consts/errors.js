@@ -53,6 +53,14 @@ const EMAIL_ALREADY_IN_USE = {
     },
   ],
 };
+
+const EMAIL_ALREADY_CONFIRMED = {
+  errors: [
+    {
+      msg: "Email is already confirmed",
+    },
+  ],
+};
 module.exports = {
   INTERNAL_SERVER_ERROR,
   INVALID_TOKEN,
@@ -61,4 +69,5 @@ module.exports = {
   INVALID_CREDENTIALS,
   USERNAME_ALREADY_IN_USE,
   EMAIL_ALREADY_IN_USE,
+  EMAIL_ALREADY_CONFIRMED,
 };
