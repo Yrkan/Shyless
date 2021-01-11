@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const config = require("config");
 const { INTERNAL_SERVER_ERROR, INVALID_TOKEN } = require("../consts/errors");
+const mongoose = require("mongoose");
 
 const authAdmin = async (req, res, next) => {
   try {
@@ -12,9 +13,13 @@ const authAdmin = async (req, res, next) => {
 
     // Decode JWT from token
     try {
-      const decoded = jwt.decode(token, config.get("jwtKey"));
+      const { admin } = jwt.decode(token, config.get("jwtKey"));
       // Verrify the id is correct
-      req.admin = decoded.admin;
+      if (!admin || !mongoose.Types.ObjectId.isValid(admin.id)) {
+        return res.status(400).json(INVALID_TOKEN);
+      }
+
+      req.admin = admin;
       next();
     } catch (e) {
       return res.status(400).json(INVALID_TOKEN);
