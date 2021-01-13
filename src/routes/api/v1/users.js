@@ -8,11 +8,14 @@ const {
   EMAIL_ALREADY_CONFIRMED,
   INVALID_ID,
   INVALID_TOKEN,
+  UNAUTHORIZED_ACCESS,
 } = require("../../../consts/errors");
 const {
   USER_REGISTRED_SUCCESSFULLY,
   EMAIL_CONFIRMED_SUCCESSFULLY,
 } = require("../../../consts/messages");
+const { authAdmin } = require("../../../middlewears/auth");
+const Admin = require("../../../models/Admin");
 const router = Router();
 
 const User = require("../../../models/User");
@@ -21,9 +24,25 @@ const { generateEmailVerificationToken } = require("../../../utils/email");
 
 // @Endpoint:     GET   /api/v1/users/
 // @Description   Get a list of users
-// @Access        Private (superAdmin + manage_uses Admins)
-router.get("/", async (req, res) => {
-  res.send("Users");
+// @Access        Private (superAdmin + manage_users Admins)
+router.get("/", authAdmin, async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.admin.id);
+    // Verify admin exists
+    if (!admin) {
+      return res.status(401).json(UNAUTHORIZED_ACCESS);
+    }
+    // Verify admin's persmissions
+    if (!(admin.permissions.super_admin || admin.permissions.manage_users)) {
+      return res.status(401).json(UNAUTHORIZED_ACCESS);
+    }
+
+    const usersList = await User.find({});
+    return res.json(usersList);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json(INTERNAL_SERVER_ERROR);
+  }
 });
 
 // @Endpoint:     GET   /api/v1/users/:id
