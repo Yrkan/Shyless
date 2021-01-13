@@ -11,7 +11,7 @@ const {
   INVALID_CREDENTIALS,
   INVALID_TOKEN,
 } = require("../../../consts/errors");
-const { authAdmin } = require("../../../middlewears/auth");
+const { authAdmin, authUser } = require("../../../middlewears/auth");
 const Admin = require("../../../models/Admin");
 const User = require("../../../models/User");
 const router = Router();
@@ -40,8 +40,22 @@ router.get("/admin", authAdmin, async (req, res) => {
 // @Endpoint:     GET   /api/v1/auth/user
 // @Description   Get authentificated user
 // @Access        Private
-router.get("/user", async (req, res) => {
-  res.send("Auth");
+router.get("/user", authUser, async (req, res) => {
+  try {
+    // validate the user id
+    if (!mongoose.Types.ObjectId.isValid(req.user.id)) {
+      return res.status(400).json(INVALID_TOKEN);
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(401).json(UNAUTHORIZED_ACCESS);
+    }
+    return res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).json(INTERNAL_SERVER_ERROR);
+  }
 });
 
 // @Endpoint:     POST   /api/v1/auth/admin/login
