@@ -78,7 +78,7 @@ router.post(
 
       const { username, password } = req.body;
       // Search Database for username
-      let admin = await await Admin.findOne({ username }).select("+password");
+      let admin = await Admin.findOne({ username }).select("+password");
       if (!admin) {
         return res.status(400).json(INVALID_CREDENTIALS);
       }
