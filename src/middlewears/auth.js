@@ -3,6 +3,33 @@ const config = require("config");
 const { INTERNAL_SERVER_ERROR, INVALID_TOKEN } = require("../consts/errors");
 const mongoose = require("mongoose");
 
+const authAdminOrUser = async (req, res, next) => {
+  try {
+    // verify if token exists
+    const token = req.header("x-auth-token");
+    if (!token) {
+      return res.status(400).json(INVALID_TOKEN);
+    }
+
+    // Decode JWT token
+    try {
+      const { admin, user } = jwt.decode(token, config.get("jwtKey"));
+      if (admin) {
+        req.admin = admin;
+        next();
+      } else if (user) {
+        req.user = user;
+        next();
+      } else {
+        return res.status(400).json(INVALID_TOKEN);
+      }
+    } catch (e) {
+      return res.status(400).json(INVALID_TOKEN);
+    }
+  } catch (err) {
+    return res.status(400).json(INVALID_TOKEN);
+  }
+};
 const authAdmin = async (req, res, next) => {
   try {
     // verify if token exists
@@ -11,7 +38,7 @@ const authAdmin = async (req, res, next) => {
       return res.status(400).json(INVALID_TOKEN);
     }
 
-    // Decode JWT from token
+    // Decode JWT token
     try {
       const { admin } = jwt.decode(token, config.get("jwtKey"));
       // Verrify the id is correct
@@ -60,4 +87,5 @@ const authUser = async (req, res, next) => {
 module.exports = {
   authAdmin,
   authUser,
+  authAdminOrUser,
 };
