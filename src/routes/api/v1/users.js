@@ -14,7 +14,7 @@ const {
   USER_REGISTRED_SUCCESSFULLY,
   EMAIL_CONFIRMED_SUCCESSFULLY,
 } = require("../../../consts/messages");
-const { authAdmin } = require("../../../middlewears/auth");
+const { authAdmin, authAdminOrUser } = require("../../../middlewears/auth");
 const Admin = require("../../../models/Admin");
 const router = Router();
 
@@ -48,8 +48,46 @@ router.get("/", authAdmin, async (req, res) => {
 // @Endpoint:     GET   /api/v1/users/:id
 // @Description   Get a single user full informations
 // @Access        Private (superAdmin + manage_uses Admins + Own user)
-router.get("/:id", async (req, res) => {
-  res.send("Users");
+router.get("/:id", authAdminOrUser, async (req, res) => {
+  try {
+    // validate the user id
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json(INVALID_ID);
+    }
+
+    if (!(req.admin || req.user)) {
+      return res.status(401).json(UNAUTHORIZED_ACCESS);
+    }
+
+    if (req.admin) {
+      const admin = await Admin.findById(req.admin.id);
+      // Verify admin exists
+      if (!admin) {
+        return res.status(401).json(UNAUTHORIZED_ACCESS);
+      }
+
+      // check admin persmissions
+      if (!(admin.permissions.super_admin || admin.permissions.manage_users)) {
+        return res.status(401).json(UNAUTHORIZED_ACCESS);
+      }
+    } else if (req.user) {
+      // check the user is the owner of the account
+      if (req.user.id != req.params.id) {
+        return res.status(401).json(UNAUTHORIZED_ACCESS);
+      }
+    }
+
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(400).json(INVALID_TOKEN);
+    }
+
+    return res.json(user);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json(INTERNAL_SERVER_ERROR);
+  }
 });
 
 // @Endpoint:     GET   /api/v1/users/profile/:username
