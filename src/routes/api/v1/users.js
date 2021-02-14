@@ -9,10 +9,12 @@ const {
   INVALID_ID,
   INVALID_TOKEN,
   UNAUTHORIZED_ACCESS,
+  NOT_FOUND,
 } = require("../../../consts/errors");
 const {
   USER_REGISTRED_SUCCESSFULLY,
   EMAIL_CONFIRMED_SUCCESSFULLY,
+  USER_CREATED_SUCCESSFULLY,
 } = require("../../../consts/messages");
 const { authAdmin, authAdminOrUser } = require("../../../middlewears/auth");
 const Admin = require("../../../models/Admin");
@@ -94,15 +96,85 @@ router.get("/:id", authAdminOrUser, async (req, res) => {
 // @Description   Get a single user profile
 // @Access        Public
 router.get("/profile/:username", async (req, res) => {
-  res.send("Users");
+  try {
+    const user = await User.findOne({ username: req.params.username });
+
+    if (!user || user.ban_status.is_banned || !user.settings.is_viewable) {
+      return res.status(404).json(NOT_FOUND);
+    }
+
+    const profile = {
+      username: user.username,
+      profile_img_url: user.profile_img_url,
+      is_askable: user.settings.is_askable,
+    };
+
+    return res.json(profile);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json(INTERNAL_SERVER_ERROR);
+  }
 });
 
 // @Endpoint:     POST   /api/v1/users/
 // @Description   Create a new user (From admin panel)
 // @Access        Private (superAdmin + manage_uses Admins)
-router.post("/", async (req, res) => {
-  res.send("Users");
-});
+router.post(
+  "/",
+  authAdmin,
+  [
+    check("username", "username is required").notEmpty(),
+    check("password", "password is required").notEmpty(),
+    check("email", "email is required").notEmpty(),
+    check("email", "invaldie email").isEmail(),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json(errors.array());
+      }
+
+      const loggedAdmin = await Admin.findById(req.admin.id);
+
+      // check admin persmissions
+      if (
+        !(
+          loggedAdmin.permissions.super_admin ||
+          loggedAdmin.permissions.manage_users
+        )
+      ) {
+        return res.status(401).json(UNAUTHORIZED_ACCESS);
+      }
+      const { username, password, email } = req.body;
+
+      // Verify that username and email aren't already in use
+      if (await User.findOne({ username })) {
+        return res.status(400).json(USERNAME_ALREADY_IN_USE);
+      } else if (await User.findOne({ email })) {
+        return res.status(400).json(EMAIL_ALREADY_IN_USE);
+      }
+
+      // hash password
+      hashedpassword = await cryptPassword(password);
+      // Initiate the new user
+      const user = new User({
+        username,
+        password: hashedpassword,
+        email,
+      });
+      // set confirmation token
+      user.email_confirmation_token = generateEmailVerificationToken(user.id);
+      // save user
+      await user.save();
+
+      return res.json(USER_CREATED_SUCCESSFULLY);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json(INTERNAL_SERVER_ERROR);
+    }
+  }
+);
 
 // @Endpoint:     POST   /api/v1/users/register
 // @Description   Register a new user

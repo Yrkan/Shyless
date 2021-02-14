@@ -61,6 +61,14 @@ const EMAIL_ALREADY_CONFIRMED = {
     },
   ],
 };
+
+const NOT_FOUND = {
+  errors: [
+    {
+      msg: "Not found",
+    },
+  ],
+};
 module.exports = {
   INTERNAL_SERVER_ERROR,
   INVALID_TOKEN,
@@ -70,4 +78,5 @@ module.exports = {
   USERNAME_ALREADY_IN_USE,
   EMAIL_ALREADY_IN_USE,
   EMAIL_ALREADY_CONFIRMED,
+  NOT_FOUND,
 };
