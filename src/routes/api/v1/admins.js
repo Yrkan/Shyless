@@ -175,10 +175,14 @@ router.put(
       }
 
       // validate the id
-      if (!mongoose.Types.ObjectId.isValid(req.admin.id)) {
+      if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
         return res.status(400).json(INVALID_TOKEN);
       }
 
+      // check if the requested admin exists
+      if (!(await Admin.findById(req.params.id))) {
+        return res.status(400).json(INVALID_ID);
+      }
       // check if the logged admin is a superadmin or the ownerAdmin
       const loggedAdmin = await Admin.findById(req.admin.id);
       if (!loggedAdmin) {
@@ -258,7 +262,7 @@ router.put(
 router.delete("/:id", authAdmin, async (req, res) => {
   try {
     // validate the id
-    if (!mongoose.Types.ObjectId.isValid(req.admin.id)) {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json(INVALID_TOKEN);
     }
 
