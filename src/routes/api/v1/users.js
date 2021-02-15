@@ -278,10 +278,143 @@ router.post(
 
 // @Endpoint:     PUT   /api/v1/users/:id
 // @Description   Update a user informations
-// @Access        Private (superAdmin + manage_uses Admins + Own user)
-router.put("/:id", async (req, res) => {
-  res.send("Users");
-});
+// @Access        Private (superAdmin + manage_uses Admins + Own user (LIMITED))
+router.put(
+  "/:id",
+  authAdminOrUser,
+  [
+    //TODO: better validation
+    check("username", "username is required").notEmpty().optional(),
+    check("password", "password is required").notEmpty().optional(),
+    check("email", "email is required").notEmpty().optional(),
+    check("email", "invalid email address").isEmail().optional(),
+    check("profile_img_url", "Invalid image url").isURL().optional(),
+  ],
+  async (req, res) => {
+    try {
+      // check for errors in request
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      // validate the id
+      if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json(INVALID_TOKEN);
+      }
+
+      // check if the requested USER exists
+      if (!(await User.findById(req.params.id))) {
+        return res.status(400).json(INVALID_ID);
+      }
+
+      // verify access permission
+      if (!(req.admin || req.user)) {
+        return res.status(401).json(UNAUTHORIZED_ACCESS);
+      }
+
+      if (req.admin) {
+        const admin = await Admin.findById(req.admin.id);
+        // Verify admin exists
+        if (!admin) {
+          return res.status(401).json(UNAUTHORIZED_ACCESS);
+        }
+
+        // check admin persmissions
+        if (
+          !(admin.permissions.super_admin || admin.permissions.manage_users)
+        ) {
+          return res.status(401).json(UNAUTHORIZED_ACCESS);
+        }
+      } else if (req.user) {
+        // check the user is the owner of the account
+        if (req.user.id != req.params.id) {
+          return res.status(401).json(UNAUTHORIZED_ACCESS);
+        }
+      }
+
+      // update the user
+      const {
+        username,
+        password,
+        email,
+        profile_img_url,
+        ban_status,
+        settings,
+      } = req.body;
+      const updates = {};
+
+      if (username) {
+        // make sure  username doesn't  exist already
+        if (await User.findOne({ username })) {
+          return res.status(400).json(USERNAME_ALREADY_IN_USE);
+        }
+        updates.username = username;
+      }
+
+      if (email) {
+        // make sure  email doesn't  exist already
+        if (await Admin.findOne({ email })) {
+          return res.status(400).json(EMAIL_ALREADY_IN_USE);
+        }
+        updates.email = email;
+        // set email to unverified and generate confirmation token
+        updates.is_email_confirmed = false;
+        updates.email_confirmation_token = generateEmailVerificationToken(
+          req.params.id
+        );
+      }
+
+      if (password) {
+        const hashedPassword = await cryptPassword(password);
+        updates.password = hashedPassword;
+      }
+
+      if (profile_img_url) {
+        updates.profile_img_url = profile_img_url;
+      }
+
+      if (settings) {
+        const newSettings = {};
+        if (settings.is_askable) {
+          newSettings.is_askable = settings.is_askable;
+        }
+        if (settings.is_viewable) {
+          newSettings.is_viewable = settings.is_viewable;
+        }
+        updates.settings = newSettings;
+      }
+
+      if (ban_status) {
+        // ban status can be set only by admins
+        if (!req.admin) {
+          return res.status(401).json(UNAUTHORIZED_ACCESS);
+        }
+        const newBanStatus = {};
+        if (ban_status.is_banned === false) {
+          newBanStatus.is_banned = false;
+          newBanStatus.banned_by = null;
+          newBanStatus.ban_date = null;
+        } else {
+          newBanStatus.is_banned = true;
+          newBanStatus.banned_by = req.admin.id;
+          newBanStatus.ban_date = Date.now();
+        }
+        updates.ban_status = newBanStatus;
+      }
+
+      // update the user
+      const newUserInfo = await User.findByIdAndUpdate(req.params.id, updates, {
+        new: true,
+      });
+
+      return res.json(newUserInfo);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json(INTERNAL_SERVER_ERROR);
+    }
+  }
+);
 
 // @Endpoint:     DELETE   /api/v1/users/:id
 // @Description   Delete a user
