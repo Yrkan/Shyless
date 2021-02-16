@@ -419,7 +419,47 @@ router.put(
 // @Endpoint:     DELETE   /api/v1/users/:id
 // @Description   Delete a user
 // @Access        Private (superAdmin + manage_uses Admins + Own user)
-router.put("/;id", async (req, res) => {
-  res.send("Users");
+router.delete("/:id", authAdminOrUser, async (req, res) => {
+  try {
+    // validate the user id
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json(INVALID_ID);
+    }
+
+    if (!(req.admin || req.user)) {
+      return res.status(401).json(UNAUTHORIZED_ACCESS);
+    }
+
+    if (req.admin) {
+      const admin = await Admin.findById(req.admin.id);
+      // Verify admin exists
+      if (!admin) {
+        return res.status(401).json(UNAUTHORIZED_ACCESS);
+      }
+
+      // check admin persmissions
+      if (!(admin.permissions.super_admin || admin.permissions.manage_users)) {
+        return res.status(401).json(UNAUTHORIZED_ACCESS);
+      }
+    } else if (req.user) {
+      // check the user is the owner of the account
+      if (req.user.id != req.params.id) {
+        return res.status(401).json(UNAUTHORIZED_ACCESS);
+      }
+    }
+
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(400).json(INVALID_TOKEN);
+    }
+
+    // Delete the user
+    const deletedUser = await User.findByIdAndDelete(req.params.id);
+    return res.json(deletedUser);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json(INTERNAL_SERVER_ERROR);
+  }
 });
 module.exports = router;
