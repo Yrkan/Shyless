@@ -277,11 +277,15 @@ router.delete("/:id", authAdmin, async (req, res) => {
       return res.status(401).json(UNAUTHORIZED_ACCESS);
     }
 
+    const admin = await Admin.findById(req.params.id);
+
+    if (!admin) {
+      return res.status(400).json(INVALID_TOKEN);
+    }
+
     // Delete the admin
     const deletedAdmin = await Admin.findByIdAndDelete(req.params.id);
     return res.json(deletedAdmin);
-
-    return res.json(newAdminInfo);
   } catch (err) {
     console.error(err.message);
     return res.status(500).json(INTERNAL_SERVER_ERROR);
