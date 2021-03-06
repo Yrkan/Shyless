@@ -16,6 +16,7 @@ const QuestionSchema = new mongoose.Schema({
   by_user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
+    select: false,
   },
   is_anonym: {
     type: Boolean,
