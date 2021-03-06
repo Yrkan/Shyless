@@ -90,7 +90,7 @@ const passGuests = async (req, res, next) => {
     // verify if token exists
     const token = req.header("x-auth-token");
     if (!token) {
-      next();
+      return next();
     }
 
     // Decode JWT from token
