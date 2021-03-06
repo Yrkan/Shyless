@@ -4,7 +4,9 @@ const connectDB = require("./db");
 const app = express();
 const PORT = 3000;
 
+// JSON parser
 app.use(express.json());
+
 // Connect Database
 connectDB();
 
