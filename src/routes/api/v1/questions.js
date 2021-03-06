@@ -17,8 +17,37 @@ const router = Router();
 // @Endpoint:     GET   /api/v1/questions/:id
 // @Description   Get a single question by id
 // @Access        Authorized (depends on creator/receiver and is_viewable)
-router.get("/", async (req, res) => {
-  res.send("Questions");
+router.get("/:id", passGuests, async (req, res) => {
+  try {
+    // Check the question id
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json(INVALID_ID);
+    }
+
+    // Check the question
+    const question = await Question.findById(req.params.id);
+    if (!question) {
+      return res.status(400).json(INVALID_ID);
+    }
+
+    // Non displayable questions are only viewable to the asked user
+    if (!question.is_displayable) {
+      if (!req.user || req.user.id != question.to_user) {
+        return res.status(401).json(UNAUTHORIZED_ACCESS);
+      }
+    }
+
+    // If question is anonyym we don't want to show the user
+    const c_question = question.toObject();
+    if (question.is_anonym) {
+      delete c_question.by_user;
+    }
+
+    return res.json(c_question);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json(INTERNAL_SERVER_ERROR);
+  }
 });
 
 // @Endpoint:     GET   /api/v1/questions/me
