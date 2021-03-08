@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoSanitize = require("express-mongo-sanitize");
 const connectDB = require("./db");
 
 const app = express();
@@ -6,6 +7,9 @@ const PORT = 3000;
 
 // JSON parser
 app.use(express.json());
+
+// Defend against NoSQL injections
+app.use(mongoSanitize());
 
 // Connect Database
 connectDB();
