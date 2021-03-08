@@ -85,10 +85,15 @@ router.post(
     authAdmin,
     [
       //TODO: better validation
-      check("username", "username is required").notEmpty(),
-      check("password", "password is required").notEmpty(),
-      check("email", "email is required").notEmpty(),
-      check("email", "invalid email address").isEmail(),
+      check("username", "Invalid username")
+        .notEmpty()
+        .isString()
+        .isAlphanumeric(),
+      check("password", "Invalid password")
+        .notEmpty()
+        .isString()
+        .isAlphanumeric(),
+      check("email", "Invalid email").notEmpty().isString().isEmail(),
     ],
   ],
   async (req, res) => {
@@ -160,10 +165,17 @@ router.put(
     authAdmin,
     [
       //TODO: better validation
-      check("username", "username is required").notEmpty().optional(),
-      check("password", "password is required").notEmpty().optional(),
-      check("email", "email is required").notEmpty().optional(),
-      check("email", "invalid email address").isEmail().optional(),
+      check("username", "Invalid username")
+        .notEmpty()
+        .isString()
+        .isAlphanumeric()
+        .optional(),
+      check("password", "Invalid password").notEmpty().isString().optional(),
+      check("email", "Invalid email")
+        .notEmpty()
+        .isString()
+        .isEmail()
+        .optional(),
     ],
   ],
   async (req, res) => {

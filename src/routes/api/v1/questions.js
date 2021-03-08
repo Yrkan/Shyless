@@ -11,7 +11,8 @@ const {
 const { MESSAGE_SENT_SUCCESSFULLY } = require("../../../consts/messages");
 const User = require("../../../models/User");
 const Question = require("../../../models/Question");
-const { authAdmin, passGuests } = require("../../../middlewears/auth");
+const { passGuests, authAdminOrUser } = require("../../../middlewears/auth");
+const Admin = require("../../../models/Admin");
 
 const router = Router();
 
@@ -51,7 +52,7 @@ router.get("/:id", passGuests, async (req, res) => {
   }
 });
 
-// @Endpoint:     GET   /api/v1/questions/user/:username
+// @Endpoint:     GET   /api/v1/questions/user/ :username
 // @Description   Get all viewable questions of a username
 // @Access        Any user
 router.get("/user/:username", async (req, res) => {
@@ -75,9 +76,26 @@ router.get("/user/:username", async (req, res) => {
 
 // @Endpoint:     GET   /api/v1/questions/all/:username
 // @Description   Get all user's question (viewable and non viewable)
-// @Access        Own user + Admins
-router.get("/", authAdmin, async (req, res) => {
-  res.send("Questions");
+// @Access        Own user + Admins (Super admins + manage users)
+router.get("/all/:username", authAdminOrUser, async (req, res) => {
+  try {
+    if (req.admin) {
+      // check if admin has permissions
+      const admin = await Admin.findById(req.admin.id);
+      if (!(admin.permissions.super_admin || admin.permissions.manage_users)) {
+        return res.status(401).json(UNAUTHORIZED_ACCESS);
+      }
+    } else if (req.user) {
+      // check if it's the owner user
+      const user = await User.findOne({ username });
+      if (user._id != req.user.id) {
+        return res.status(401).json(UNAUTHORIZED_ACCESS);
+      }
+    }
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json(INTERNAL_SERVER_ERROR);
+  }
 });
 
 // @Endpoint:     POST   /api/v1/questions/
@@ -87,9 +105,9 @@ router.post(
   "/",
   passGuests,
   [
-    check("text", "question can't be empty").notEmpty(),
-    check("to_user", "reveiver ID is required").notEmpty(),
-    check("is_anonym", "is_anonyme is a boolean").isBoolean().notEmpty(),
+    check("text", "Invalid question").notEmpty().isString(),
+    check("to_user", "Invalid ID").notEmpty().isString(),
+    check("is_anonym", "Invalid is_anonyme").isBoolean().notEmpty(),
   ],
   async (req, res) => {
     try {

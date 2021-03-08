@@ -123,10 +123,12 @@ router.post(
   "/",
   authAdmin,
   [
-    check("username", "username is required").notEmpty(),
-    check("password", "password is required").notEmpty(),
-    check("email", "email is required").notEmpty(),
-    check("email", "invaldie email").isEmail(),
+    check("username", "Invalid username")
+      .notEmpty()
+      .isString()
+      .isAlphanumeric(),
+    check("password", "Invalid password").notEmpty().isString(),
+    check("email", "Invalid email").notEmpty().isString().isEmail(),
   ],
   async (req, res) => {
     try {
@@ -182,10 +184,12 @@ router.post(
 router.post(
   "/register",
   [
-    check("username", "username is required").notEmpty(),
-    check("password", "password is required").notEmpty(),
-    check("email", "email is required").notEmpty(),
-    check("email", "invaldie email").isEmail(),
+    check("username", "Invalid username")
+      .isString()
+      .isAlphanumeric()
+      .notEmpty(),
+    check("password", "Invalid password").isString().notEmpty(),
+    check("email", "Invalid email").isEmail().isString().notEmpty(),
   ],
   async (req, res) => {
     try {
@@ -229,7 +233,7 @@ router.post(
 // @Access        Public
 router.post(
   "/verify/:id",
-  [check("token", "token is required").notEmpty()],
+  [check("token", "Invalid token").notEmpty().isString()],
   async (req, res) => {
     try {
       const errors = validationResult(req);
@@ -284,11 +288,14 @@ router.put(
   authAdminOrUser,
   [
     //TODO: better validation
-    check("username", "username is required").notEmpty().optional(),
-    check("password", "password is required").notEmpty().optional(),
-    check("email", "email is required").notEmpty().optional(),
-    check("email", "invalid email address").isEmail().optional(),
-    check("profile_img_url", "Invalid image url").isURL().optional(),
+    check("username", "Invalid username")
+      .isString()
+      .isAlphanumeric()
+      .notEmpty()
+      .optional(),
+    check("password", "Invalid password").isString().notEmpty().optional(),
+    check("email", "Invalid email").isEmail().isString().notEmpty().optional(),
+    check("profile_img_url", "Invalid image url").isString().isURL().optional(),
   ],
   async (req, res) => {
     try {

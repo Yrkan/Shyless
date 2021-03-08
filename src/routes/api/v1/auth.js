@@ -65,8 +65,8 @@ router.post(
   "/admin/login",
   [
     // TODO: Better validation
-    check("username", "username is required").notEmpty(),
-    check("password", "password is required").notEmpty(),
+    check("username", "Invalid username").notEmpty().isString(),
+    check("password", "Invalid password").notEmpty().isString(),
   ],
   async (req, res) => {
     try {
@@ -97,7 +97,7 @@ router.post(
         }
       );
     } catch (err) {
-      console.error(err.message);
+      console.error(err);
       return res.status(500).json(INTERNAL_SERVER_ERROR);
     }
   }
@@ -110,8 +110,8 @@ router.post(
   "/user/login",
   [
     // TODO: Better validation
-    check("username", "username is required").notEmpty(),
-    check("password", "password is required").notEmpty(),
+    check("username", "Invalid username").isString().notEmpty(),
+    check("password", "Invalid password").isString().notEmpty(),
   ],
   async (req, res) => {
     try {
