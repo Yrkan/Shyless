@@ -6,6 +6,7 @@ const {
   INTERNAL_SERVER_ERROR,
   INVALID_ID,
   UNAUTHORIZED_ACCESS,
+  NOT_FOUND,
 } = require("../../../consts/errors");
 const { MESSAGE_SENT_SUCCESSFULLY } = require("../../../consts/messages");
 const User = require("../../../models/User");
@@ -37,7 +38,7 @@ router.get("/:id", passGuests, async (req, res) => {
       }
     }
 
-    // If question is anonyym we don't want to show the user
+    // If question is anonym we don't want to show the user
     const c_question = question.toObject();
     if (question.is_anonym) {
       delete c_question.by_user;
@@ -50,18 +51,26 @@ router.get("/:id", passGuests, async (req, res) => {
   }
 });
 
-// @Endpoint:     GET   /api/v1/questions/me
-// @Description   Get all connected user questions
-// @Access        Own user
-router.get("/", async (req, res) => {
-  res.send("Questions");
-});
-
-// @Endpoint:     GET   /api/v1/questions/:username
+// @Endpoint:     GET   /api/v1/questions/user/:username
 // @Description   Get all viewable questions of a username
 // @Access        Any user
-router.get("/", async (req, res) => {
-  res.send("Questions");
+router.get("/user/:username", async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.params.username });
+    if (!user) {
+      return res.status(400).json(NOT_FOUND);
+    }
+
+    const questions = await Question.find({
+      to_user: user._id,
+      is_displayable: true,
+    });
+
+    return res.json(questions);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json(INTERNAL_SERVER_ERROR);
+  }
 });
 
 // @Endpoint:     GET   /api/v1/questions/all/:username
