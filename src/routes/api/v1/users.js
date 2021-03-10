@@ -39,7 +39,7 @@ router.get("/", authAdmin, async (req, res) => {
       return res.status(401).json(UNAUTHORIZED_ACCESS);
     }
 
-    const usersList = await User.find({});
+    const usersList = await User.find({}).select("+email_confirmation_token");
     return res.json(usersList);
   } catch (err) {
     console.error(err);
