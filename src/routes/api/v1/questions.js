@@ -74,10 +74,10 @@ router.get("/user/:username", async (req, res) => {
   }
 });
 
-// @Endpoint:     GET   /api/v1/questions/all/:username
+// @Endpoint:     GET   /api/v1/questions/all/:id
 // @Description   Get all user's question (viewable and non viewable)
 // @Access        Own user + Admins (Super admins + manage users)
-router.get("/all/:username", authAdminOrUser, async (req, res) => {
+router.get("/all/:id", authAdminOrUser, async (req, res) => {
   try {
     if (req.admin) {
       // check if admin has permissions
@@ -87,11 +87,21 @@ router.get("/all/:username", authAdminOrUser, async (req, res) => {
       }
     } else if (req.user) {
       // check if it's the owner user
-      const user = await User.findOne({ username });
-      if (user._id != req.user.id) {
+      if (req.params.id != req.user.id) {
         return res.status(401).json(UNAUTHORIZED_ACCESS);
       }
+    } else {
+      return res.status(401).json(UNAUTHORIZED_ACCESS);
     }
+
+    // check if the user exists
+    if (!(await User.findById(req.params.id))) {
+      return res.status(400).json(INVALID_ID);
+    }
+    const received = await Question.find({ to_user: req.params.id });
+    const asked = await Question.find({ by_user: req.params.id });
+
+    return res.json({ received, asked });
   } catch (err) {
     console.error(err);
     return res.status(500).json(INTERNAL_SERVER_ERROR);
