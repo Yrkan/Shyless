@@ -123,7 +123,7 @@ router.post(
   passGuests,
   [
     check("text", "Invalid question").notEmpty().isString(),
-    check("to_user", "Invalid ID").notEmpty().isString(),
+    check("to_user", "Invalid ID").notEmpty().isMongoId(),
     check("is_anonym", "Invalid is_anonyme").isBoolean().notEmpty(),
   ],
   async (req, res) => {
@@ -135,11 +135,6 @@ router.post(
       }
 
       const { text, to_user, is_anonym } = req.body;
-
-      // validate the reveiver user exists
-      if (!mongoose.Types.ObjectId.isValid(to_user)) {
-        return res.status(400).json(INVALID_ID);
-      }
 
       const receiver = await User.findById(to_user);
       // no user found
