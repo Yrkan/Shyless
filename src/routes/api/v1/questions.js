@@ -11,7 +11,11 @@ const {
 const { MESSAGE_SENT_SUCCESSFULLY } = require("../../../consts/messages");
 const User = require("../../../models/User");
 const Question = require("../../../models/Question");
-const { passGuests, authAdminOrUser } = require("../../../middlewears/auth");
+const {
+  passGuests,
+  authAdminOrUser,
+  authUser,
+} = require("../../../middlewears/auth");
 const Admin = require("../../../models/Admin");
 
 const router = Router();
@@ -79,6 +83,10 @@ router.get("/user/:username", async (req, res) => {
 // @Access        Own user + Admins (Super admins + manage users)
 router.get("/all/:id", authAdminOrUser, async (req, res) => {
   try {
+    //validate the id
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json(INVALID_ID);
+    }
     if (req.admin) {
       // check if admin has permissions
       const admin = await Admin.findById(req.admin.id);
@@ -93,7 +101,6 @@ router.get("/all/:id", authAdminOrUser, async (req, res) => {
     } else {
       return res.status(401).json(UNAUTHORIZED_ACCESS);
     }
-
     // check if the user exists
     if (!(await User.findById(req.params.id))) {
       return res.status(400).json(INVALID_ID);
@@ -179,11 +186,60 @@ router.post(
 );
 
 // @Endpoint:     PUT   /api/v1/questions/:id
-// @Description   Edit question / Reply
-// @Access        Asker and Receiver (both limited)
-router.get("/", async (req, res) => {
-  res.send("Questions");
-});
+// @Description   Answer / Edit question settings
+// @Access        Receiver
+router.put(
+  "/:id",
+  authUser,
+  [
+    check("answer", "Invalid answer").isString().notEmpty().optional(),
+    check("is_displayable", "Invalid is_displayable").isBoolean().optional(),
+    check("is_commentable", "Invalid is_commentable").isBoolean().optional(),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      // verify question id
+      if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json(INVALID_ID);
+      }
+
+      const question = await Question.findById(req.params.id);
+      if (!question) {
+        return res.status(400).json(NOT_FOUND);
+      }
+
+      if (req.user.id != question.to_user) {
+        console.log(req.user.id, question.to_user);
+        return res.status(401).json(UNAUTHORIZED_ACCESS);
+      }
+
+      const { answer, is_displayable, is_commentable } = req.body;
+
+      if (answer) {
+        question.answer = answer;
+      }
+
+      if (is_displayable != undefined) {
+        question.is_displayable = is_displayable;
+      }
+
+      if (is_commentable != undefined) {
+        question.is_commentable = is_commentable;
+      }
+
+      await question.save();
+      return res.json(question);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json(INTERNAL_SERVER_ERROR);
+    }
+  }
+);
 
 // @Endpoint:     DELETE   /api/v1/questions/:id
 // @Description   Delete a question

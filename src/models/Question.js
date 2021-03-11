@@ -22,10 +22,6 @@ const QuestionSchema = new mongoose.Schema({
     type: Boolean,
     required: true,
   },
-  is_answered: {
-    type: Boolean,
-    default: false,
-  },
   is_displayable: {
     type: Boolean,
     default: false,
