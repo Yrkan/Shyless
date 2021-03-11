@@ -296,6 +296,11 @@ router.put(
     check("password", "Invalid password").isString().notEmpty().optional(),
     check("email", "Invalid email").isEmail().isString().notEmpty().optional(),
     check("profile_img_url", "Invalid image url").isString().isURL().optional(),
+    check("settings", "Invalid settings format").isObject().optional(),
+    check("settings.is_askable", "Invalid is_askable").isBoolean().optional(),
+    check("settings.is_viewable", "Invalid is_viewable").isBoolean().optional(),
+    check("ban_status", "Invalid ban status format").isObject().optional(),
+    check("ban_status.is_banned", "Invalid is_banned").isBoolean().optional(),
   ],
   async (req, res) => {
     try {
@@ -383,16 +388,16 @@ router.put(
 
       if (settings) {
         const newSettings = {};
-        if (settings.is_askable) {
+        if (settings.is_askable != undefined) {
           newSettings.is_askable = settings.is_askable;
         }
-        if (settings.is_viewable) {
+        if (settings.is_viewable != undefined) {
           newSettings.is_viewable = settings.is_viewable;
         }
         updates.settings = newSettings;
       }
 
-      if (ban_status) {
+      if (ban_status != undefined) {
         // ban status can be set only by admins
         if (!req.admin) {
           return res.status(401).json(UNAUTHORIZED_ACCESS);
