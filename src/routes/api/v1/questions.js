@@ -93,7 +93,10 @@ router.get("/all/:id", authAdminOrUser, async (req, res) => {
     if (req.admin) {
       // check if admin has permissions
       const admin = await Admin.findById(req.admin.id);
-      if (!(admin.permissions.super_admin || admin.permissions.manage_users)) {
+      if (
+        !admin ||
+        !(admin.permissions.super_admin || admin.permissions.manage_users)
+      ) {
         return res.status(401).json(UNAUTHORIZED_ACCESS);
       }
     } else if (req.user) {
