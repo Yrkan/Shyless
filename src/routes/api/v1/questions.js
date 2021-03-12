@@ -8,7 +8,10 @@ const {
   UNAUTHORIZED_ACCESS,
   NOT_FOUND,
 } = require("../../../consts/errors");
-const { MESSAGE_SENT_SUCCESSFULLY } = require("../../../consts/messages");
+const {
+  MESSAGE_SENT_SUCCESSFULLY,
+  QUESTION_DELETED_SUCCESSFULLY,
+} = require("../../../consts/messages");
 const User = require("../../../models/User");
 const Question = require("../../../models/Question");
 const {
@@ -239,7 +242,40 @@ router.put(
 // @Endpoint:     DELETE   /api/v1/questions/:id
 // @Description   Delete a question
 // @Access        Asker and Receiver and Admins
-router.get("/", async (req, res) => {
-  res.send("Questions");
+router.delete("/:id", authAdminOrUser, async (req, res) => {
+  try {
+    // validate question
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json(INVALID_ID);
+    }
+    const question = await Question.findById(req.params.id).select("+by_user");
+    if (!question) {
+      return res.status(404).json(NOT_FOUND);
+    }
+
+    if (req.admin) {
+      const admin = await Admin.findById(req.admin.id);
+      if (
+        !admin ||
+        !(admin.permissions.manage_users || admin.permissions.super_admin)
+      ) {
+        return res.status(401).json(UNAUTHORIZED_ACCESS);
+      }
+    } else if (req.user) {
+      if (
+        !(question.to_user == req.user.id || question.by_user == req.user.id)
+      ) {
+        return res.status(401).json(UNAUTHORIZED_ACCESS);
+      }
+    } else {
+      return res.status(401).json(UNAUTHORIZED_ACCESS);
+    }
+
+    await question.remove();
+    return res.json(QUESTION_DELETED_SUCCESSFULLY);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json(INTERNAL_SERVER_ERROR);
+  }
 });
 module.exports = router;
