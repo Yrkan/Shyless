@@ -26,10 +26,6 @@ const QuestionSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  is_commentable: {
-    type: Boolean,
-    default: false,
-  },
   create_date: {
     type: Date,
     default: Date.now,
