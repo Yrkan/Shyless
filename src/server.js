@@ -3,7 +3,7 @@ const mongoSanitize = require("express-mongo-sanitize");
 const connectDB = require("./db");
 
 const app = express();
-const PORT = 3000;
+const PORT = 5000;
 
 // JSON parser
 app.use(express.json());
