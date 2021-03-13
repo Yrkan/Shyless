@@ -1,5 +1,5 @@
 {
-  "name": "shyless",
+  "name": "shyless-server",
   "version": "0.0.1",
   "description": "Backend for shyless built with node and express",
   "main": "src/server.js",
