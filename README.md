@@ -1,2 +1,5 @@
 # Shyless
-A web app to ask people questions anonymously 
+
+A web app to ask people questions anonymously
+
+## Installation
