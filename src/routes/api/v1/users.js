@@ -134,7 +134,9 @@ router.post(
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json(errors.array());
+        return res
+          .status(400)
+          .json({ errors: errors.array({ onlyFirstError: true }) });
       }
 
       const loggedAdmin = await Admin.findById(req.admin.id);
@@ -194,8 +196,11 @@ router.post(
   async (req, res) => {
     try {
       const errors = validationResult(req);
+      console.log(errors);
       if (!errors.isEmpty()) {
-        return res.status(400).json(errors.array());
+        return res
+          .status(400)
+          .json({ errors: errors.array({ onlyFirstError: true }) });
       }
 
       const { username, password, email } = req.body;
@@ -238,7 +243,9 @@ router.post(
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json(errors.array());
+        return res
+          .status(400)
+          .json({ errors: errors.array({ onlyFirstError: true }) });
       }
 
       // validate the user id
@@ -307,7 +314,9 @@ router.put(
       // check for errors in request
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        return res
+          .status(400)
+          .json({ errors: errors.array({ onlyFirstError: true }) });
       }
 
       // validate the id

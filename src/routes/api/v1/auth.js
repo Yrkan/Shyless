@@ -73,7 +73,9 @@ router.post(
       // Check bad request
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        return res
+          .status(400)
+          .json({ errors: errors.array({ onlyFirstError: true }) });
       }
 
       const { username, password } = req.body;
@@ -117,7 +119,9 @@ router.post(
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        return res
+          .status(400)
+          .json({ errors: errors.array({ onlyFirstError: true }) });
       }
 
       const { username, password } = req.body;

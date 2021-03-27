@@ -137,7 +137,9 @@ router.post(
       // check for errors in request
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        return res
+          .status(400)
+          .json({ errors: errors.array({ onlyFirstError: true }) });
       }
 
       const { text, to_user, is_anonym } = req.body;
@@ -201,7 +203,9 @@ router.put(
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        return res
+          .status(400)
+          .json({ errors: errors.array({ onlyFirstError: true }) });
       }
 
       // verify question id
